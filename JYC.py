@@ -3,28 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-# 生成模拟数据
-np.random.seed(0) # 设置随机数种子，保证每次运行结果一致
-N = 100 # 设置车辆数量
-T = 100 # 设置时间步长数量
-L = 1000 # 设置路段长度
-W = 12 # 设置路段宽度
-M = 3 # 设置车道数量
-v_max = 20 # 设置最大速度
-a_max = 2 # 设置最大加速度
-p = 0.1 # 设置应急车辆占比
-x = np.zeros((N,T)) # 初始化车辆位置矩阵
-y = np.zeros((N,T)) # 初始化车辆横向位置矩阵
-v = np.zeros((N,T)) # 初始化车辆速度矩阵
-a = np.zeros((N,T)) # 初始化车辆加速度矩阵
-u = np.zeros((N,T)) # 初始化车辆控制输入矩阵
-t_e = np.zeros(N) # 初始化应急车辆行驶时间向量
-t_s = np.zeros(N) # 初始化社会车辆行驶时间向量
-type = np.random.binomial(1,p,N) # 随机生成车辆类型向量，0表示社会车辆，1表示应急车辆
-v[:,0] = v_max * np.random.rand(N) # 随机生成初始速度向量
-a[:,0] = a_max * (2 * np.random.rand(N) - 1) # 随机生成初始加速度向量
-y[:,0] = W / M * (np.random.randint(M, size=N) + 0.5) # 随机生成初始横向位置向量
-
 
 # 定义晶格流体模型中的局部平衡分布函数
 def f_i_eq(x,y,v,a,type,i,t):
@@ -78,6 +56,29 @@ def f_i(x,y,v,a,type,i,t):
         else: # 如果最接近传播位置的车辆距离大于最大速度（即没有发生碰撞）
             f_ij[k_j,j,t+1] = f_ij[i,j,t+1] - (f_ij[i,j,t+1] - f_ij_eq[k_j,j,t+1]) / tau_ij[k_j,j,t+1] # 更新流体密度分布函数，考虑传播过程
     return f_ij
+
+
+# 生成模拟数据
+np.random.seed(0) # 设置随机数种子，保证每次运行结果一致
+N = 100 # 设置车辆数量
+T = 100 # 设置时间步长数量
+L = 1000 # 设置路段长度
+W = 12 # 设置路段宽度
+M = 3 # 设置车道数量
+v_max = 20 # 设置最大速度
+a_max = 2 # 设置最大加速度
+p = 0.1 # 设置应急车辆占比
+x = np.zeros((N,T)) # 初始化车辆位置矩阵
+y = np.zeros((N,T)) # 初始化车辆横向位置矩阵
+v = np.zeros((N,T)) # 初始化车辆速度矩阵
+a = np.zeros((N,T)) # 初始化车辆加速度矩阵
+u = np.zeros((N,T)) # 初始化车辆控制输入矩阵
+t_e = np.zeros(N) # 初始化应急车辆行驶时间向量
+t_s = np.zeros(N) # 初始化社会车辆行驶时间向量
+type = np.random.binomial(1,p,N) # 随机生成车辆类型向量，0表示社会车辆，1表示应急车辆
+v[:,0] = v_max * np.random.rand(N) # 随机生成初始速度向量
+a[:,0] = a_max * (2 * np.random.rand(N) - 1) # 随机生成初始加速度向量
+y[:,0] = W / M * (np.random.randint(M, size=N) + 0.5) # 随机生成初始横向位置向量
 
 # 模拟车辆运动过程
 for i in range(N):
