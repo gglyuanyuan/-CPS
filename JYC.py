@@ -5,14 +5,14 @@ import pandas as pd
 
 
 # 定义晶格流体模型中的局部平衡分布函数
-def f_i_eq(x,y,v,a,type,i,t):
+def f_i_eq(x,y,v,a,vtype,i,t):
     rho_i = x[i,t] / L # 计算沿着纵向位置的流体密度
     u_i = v[i,t] / v_max # 计算沿着纵向位置的流体速度
     w_i = y[i,t] / W # 计算沿着横向位置的流体密度
     alpha_i = np.ones(9) # 初始化偏好因子向量
     alpha_i[0] = 0.5 # 设置静止方向的偏好因子为0.5
     alpha_i[2] = alpha_i[4] = alpha_i[6] = alpha_i[8] = 0.75 # 设置对角线方向的偏好因子为0.75
-    if type[i] == 0: # 如果是社会车辆
+    if vtype[i] == 0: # 如果是社会车辆
         alpha_i[3] = alpha_i[7] = 0.25 # 设置横向方向的偏好因子为0.25
         alpha_i[1] = alpha_i[5] = 0.75 # 设置纵向方向的偏好因子为0.75
     else: # 如果是应急车辆
@@ -27,11 +27,11 @@ def f_i_eq(x,y,v,a,type,i,t):
     return f_i_eq
 
 # 定义晶格流体模型中的松弛时间参数
-def tau_i(x,y,v,a,type,i,t):
+def tau_i(x,y,v,a,vtype,i,t):
     omega_i = np.ones(9) # 初始化碰撞参数向量
     omega_i[0] = 0.5 # 设置静止方向的碰撞参数为0.5
     omega_i[2] = omega_i[4] = omega_i[6] = omega_i[8] = 0.75 # 设置对角线方向的碰撞参数为0.75
-    if type[i] == 0: # 如果是社会车辆
+    if vtype[i] == 0: # 如果是社会车辆
         omega_i[3] = omega_i[7] = 1 # 设置横向方向的碰撞参数为1
         omega_i[1] = omega_i[5] = 0.75 # 设置纵向方向的碰撞参数为0.75
     else: # 如果是应急车辆
@@ -41,9 +41,9 @@ def tau_i(x,y,v,a,type,i,t):
     return tau_i
 
 # 定义晶格流体模型中的流体密度分布函数
-def f_i(x,y,v,a,type,i,t):
-    f_i_eq = f_i_eq(x,y,v,a,type,i,t) # 计算局部平衡分布函数
-    tau_i = tau_i(x,y,v,a,type,i,t) # 计算松弛时间参数
+def f_i(x,y,v,a,vtype,i,t):
+    f_i_eq = f_i_eq(x,y,v,a,vtype,i,t) # 计算局部平衡分布函数
+    tau_i = tau_i(x,y,v,a,vtype,i,t) # 计算松弛时间参数
     f_i = np.zeros(9) # 初始化流体密度分布函数向量
     for j in range(9): # 遍历九个可能的速度方向
         e_jx = np.cos(np.pi / 4 * j) # 计算沿着纵向位置的速度分量
@@ -75,7 +75,7 @@ a = np.zeros((N,T)) # 初始化车辆加速度矩阵
 u = np.zeros((N,T)) # 初始化车辆控制输入矩阵
 t_e = np.zeros(N) # 初始化应急车辆行驶时间向量
 t_s = np.zeros(N) # 初始化社会车辆行驶时间向量
-type = np.random.binomial(1,p,N) # 随机生成车辆类型向量，0表示社会车辆，1表示应急车辆
+vtype = np.random.binomial(1,p,N) # 随机生成车辆类型向量，0表示社会车辆，1表示应急车辆
 v[:,0] = v_max * np.random.rand(N) # 随机生成初始速度向量
 a[:,0] = a_max * (2 * np.random.rand(N) - 1) # 随机生成初始加速度向量
 y[:,0] = W / M * (np.random.randint(M, size=N) + 0.5) # 随机生成初始横向位置向量
@@ -85,7 +85,7 @@ for i in range(N):
     for t in range(T-1):
         if x[i,t] < L: # 如果车辆还没有到达路段终点
             
-            if type[i] == 0: # 如果是社会车辆
+            if vtype[i] == 0: # 如果是社会车辆
                 
                 if np.random.rand() < 0.01: # 如果有一定概率换道
                     
@@ -178,7 +178,7 @@ for i in range(N):
                     y[i,t+1] = y[i,t] # 保持在当前横向位置
             
             u[i,t] = a_max * (2 * np.random.rand() - 1) # 随机生成控制输入
-            a[i,t+1] = a[i,t] + u[i,t] - (f_i(x,y,v,a,type,i,t) - f_i_eq(x,y,v,a,type,i,t)) / tau_i(x,y,v,a,type,i,t) # 更新加速度，考虑晶格流体模型中的传播和碰撞过程
+            a[i,t+1] = a[i,t] + u[i,t] - (f_i(x,y,v,a,vtype,i,t) - f_i_eq(x,y,v,a,vtype,i,t)) / tau_i(x,y,v,a,vtype,i,t) # 更新加速度，考虑晶格流体模型中的传播和碰撞过程
             v[i,t+1] = v[i,t] + a[i,t+1] # 更新速度
             x[i,t+1] = x[i,t] + v[i,t+1] # 更新位置
 
@@ -192,7 +192,7 @@ for i in range(N):
                 v[i,t+1] = 0 # 限制速度为零（即停止）
             if x[i,t+1] > L: # 如果位置超过路段长度（即到达终点）
                 x[i,t+1] = L # 限制位置为路段长度（即终点）
-                if type[i] == 0: # 如果是社会车辆
+                if vtype[i] == 0: # 如果是社会车辆
                     t_s[i] = t + 1 # 记录行驶时间
                 else: # 如果是应急车辆
                     t_e[i] = t + 1 # 记录行驶时间
@@ -200,16 +200,16 @@ for i in range(N):
 
 
 # 计算交通系统性能指标
-flow_e = np.sum(type) / T / L * 3600 * 1000 # 计算应急车辆流量，单位为辆/小时/千米
-flow_s = np.sum(1 - type) / T / L * 3600 * 1000 # 计算社会车辆流量，单位为辆/小时/千米
-speed_e = np.mean(v[type == 1,:]) # 计算应急车辆平均速度，单位为米/秒
-speed_s = np.mean(v[type == 0,:]) # 计算社会车辆平均速度，单位为米/秒
-density_e = np.mean(x[type == 1,:]) / L # 计算应急车辆平均密度，单位为辆/米
-density_s = np.mean(x[type == 0,:]) / L # 计算社会车辆平均密度，单位为辆/米
-delay_s = np.mean(t_s[type == 0] - L / v_max) # 计算社会车辆平均延误，单位为秒
-stop_s = np.sum(v[type == 0,:] == 0) / np.sum(1 - type) # 计算社会车辆平均停车次数，单位为次
-time_e = np.mean(t_e[type == 1]) # 计算应急车辆平均行驶时间，单位为秒
-time_s = np.mean(t_s[type == 0]) # 计算社会车辆平均行驶时间，单位为秒
+flow_e = np.sum(vtype) / T / L * 3600 * 1000 # 计算应急车辆流量，单位为辆/小时/千米
+flow_s = np.sum(1 - vtype) / T / L * 3600 * 1000 # 计算社会车辆流量，单位为辆/小时/千米
+speed_e = np.mean(v[vtype == 1,:]) # 计算应急车辆平均速度，单位为米/秒
+speed_s = np.mean(v[vtype == 0,:]) # 计算社会车辆平均速度，单位为米/秒
+density_e = np.mean(x[vtype == 1,:]) / L # 计算应急车辆平均密度，单位为辆/米
+density_s = np.mean(x[vtype == 0,:]) / L # 计算社会车辆平均密度，单位为辆/米
+delay_s = np.mean(t_s[vtype == 0] - L / v_max) # 计算社会车辆平均延误，单位为秒
+stop_s = np.sum(v[vtype == 0,:] == 0) / np.sum(1 - vtype) # 计算社会车辆平均停车次数，单位为次
+time_e = np.mean(t_e[vtype == 1]) # 计算应急车辆平均行驶时间，单位为秒
+time_s = np.mean(t_s[vtype == 0]) # 计算社会车辆平均行驶时间，单位为秒
 time_tot = np.sum(t_e) + np.sum(t_s) # 计算所有车辆总行驶时间，单位为秒
 occupancy = np.mean(np.sum(x < L, axis=0)) / N # 计算道路占有率，单位为百分比
 safety = 1 - np.sum(np.diff(x, axis=0) < 0) / (N * (N - 1) / 2) # 计算安全性，单位为百分比
