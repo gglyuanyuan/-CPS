@@ -5,7 +5,7 @@ import pandas as pd
 
 
 # 定义晶格流体模型中的局部平衡分布函数
-def f_i_eq(x,y,v,a,vtype,i,t):
+def f_ij_eq(x,y,v,a,vtype,i,t):
     rho_i = x[i,t] / L # 计算沿着纵向位置的流体密度
     u_i = v[i,t] / v_max # 计算沿着纵向位置的流体速度
     w_i = y[i,t] / W # 计算沿着横向位置的流体密度
@@ -19,15 +19,15 @@ def f_i_eq(x,y,v,a,vtype,i,t):
         alpha_i[3] = alpha_i[7] = 0.75 # 设置横向方向的偏好因子为0.75
         alpha_i[1] = alpha_i[5] = 1.25 # 设置纵向方向的偏好因子为1.25
     c_s = np.sqrt(3) / 2 # 设置声速，取D2Q9模型中的值
-    f_i_eq = np.zeros(9) # 初始化局部平衡分布函数向量
+    f_ij_eq = np.zeros(9) # 初始化局部平衡分布函数向量
     for j in range(9): # 遍历九个可能的速度方向
         e_jx = np.cos(np.pi / 4 * j) # 计算沿着纵向位置的速度分量
         e_jy = np.sin(np.pi / 4 * j) # 计算沿着横向位置的速度分量
-        f_i_eq[j] = rho_i * w_i * (1 + (e_jx * u_i + e_jy * w_i) / c_s ** 2 + ((e_jx * u_i + e_jy * w_i) ** 2 - (u_i ** 2 + w_i ** 2)) / (2 * c_s ** 4)) * alpha_i[j] # 计算局部平衡分布函数
-    return f_i_eq
+        f_ij_eq[j] = rho_i * w_i * (1 + (e_jx * u_i + e_jy * w_i) / c_s ** 2 + ((e_jx * u_i + e_jy * w_i) ** 2 - (u_i ** 2 + w_i ** 2)) / (2 * c_s ** 4)) * alpha_i[j] # 计算局部平衡分布函数
+    return f_ij_eq
 
 # 定义晶格流体模型中的松弛时间参数
-def tau_i(x,y,v,a,vtype,i,t):
+def tau_ij(x,y,v,a,vtype,i,t):
     omega_i = np.ones(9) # 初始化碰撞参数向量
     omega_i[0] = 0.5 # 设置静止方向的碰撞参数为0.5
     omega_i[2] = omega_i[4] = omega_i[6] = omega_i[8] = 0.75 # 设置对角线方向的碰撞参数为0.75
@@ -37,14 +37,14 @@ def tau_i(x,y,v,a,vtype,i,t):
     else: # 如果是应急车辆
         omega_i[3] = omega_i[7] = 0.5 # 设置横向方向的碰撞参数为0.5
         omega_i[1] = omega_i[5] = 0.25 # 设置纵向方向的碰撞参数为0.25
-    tau_i = 1 / omega_i # 计算松弛时间参数
-    return tau_i
+    tau_ij = 1 / omega_i # 计算松弛时间参数
+    return tau_ij
 
 # 定义晶格流体模型中的流体密度分布函数
-def f_i(x,y,v,a,vtype,i,t):
-    f_i_eq = f_i_eq(x,y,v,a,vtype,i,t) # 计算局部平衡分布函数
-    tau_i = tau_i(x,y,v,a,vtype,i,t) # 计算松弛时间参数
-    f_i = np.zeros(9) # 初始化流体密度分布函数向量
+def f_ij(x,y,v,a,vtype,i,t):
+    f_ij_eq = f_ij_eq(x,y,v,a,vtype,i,t) # 计算局部平衡分布函数
+    tau_ij = tau_ij(x,y,v,a,vtype,i,t) # 计算松弛时间参数
+    f_ij = np.zeros(9) # 初始化流体密度分布函数向量
     for j in range(9): # 遍历九个可能的速度方向
         e_jx = np.cos(np.pi / 4 * j) # 计算沿着纵向位置的速度分量
         e_jy = np.sin(np.pi / 4 * j) # 计算沿着横向位置的速度分量
@@ -178,7 +178,7 @@ for i in range(N):
                     y[i,t+1] = y[i,t] # 保持在当前横向位置
             
             u[i,t] = a_max * (2 * np.random.rand() - 1) # 随机生成控制输入
-            a[i,t+1] = a[i,t] + u[i,t] - (f_i(x,y,v,a,vtype,i,t) - f_i_eq(x,y,v,a,vtype,i,t)) / tau_i(x,y,v,a,vtype,i,t) # 更新加速度，考虑晶格流体模型中的传播和碰撞过程
+            a[i,t+1] = a[i,t] + u[i,t] - (f_ij(x,y,v,a,vtype,i,t) - f_ij_eq(x,y,v,a,vtype,i,t)) / tau_ij(x,y,v,a,vtype,i,t) # 更新加速度，考虑晶格流体模型中的传播和碰撞过程
             v[i,t+1] = v[i,t] + a[i,t+1] # 更新速度
             x[i,t+1] = x[i,t] + v[i,t+1] # 更新位置
 
