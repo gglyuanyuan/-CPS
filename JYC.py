@@ -4,66 +4,11 @@ import numpy as np
 import pandas as pd
 
 
-# # 定义晶格流体模型中的局部平衡分布函数
-# def f_ij_eq(x,y,v,a,vtype,i,t):
-#     rho_i = x[i,t] / L # 计算沿着纵向位置的流体密度
-#     u_i = v[i,t] / v_max # 计算沿着纵向位置的流体速度
-#     w_i = y[i,t] / W # 计算沿着横向位置的流体密度
-#     alpha_i = np.ones(9) # 初始化偏好因子向量
-#     alpha_i[0] = 0.5 # 设置静止方向的偏好因子为0.5
-#     alpha_i[2] = alpha_i[4] = alpha_i[6] = alpha_i[8] = 0.75 # 设置对角线方向的偏好因子为0.75
-#     if vtype[i] == 0: # 如果是社会车辆
-#         alpha_i[3] = alpha_i[7] = 0.25 # 设置横向方向的偏好因子为0.25
-#         alpha_i[1] = alpha_i[5] = 0.75 # 设置纵向方向的偏好因子为0.75
-#     else: # 如果是应急车辆
-#         alpha_i[3] = alpha_i[7] = 0.75 # 设置横向方向的偏好因子为0.75
-#         alpha_i[1] = alpha_i[5] = 1.25 # 设置纵向方向的偏好因子为1.25
-#     c_s = np.sqrt(3) / 2 # 设置声速，取D2Q9模型中的值
-#     f_ij_eq = np.zeros(9) # 初始化局部平衡分布函数向量
-#     for j in range(9): # 遍历九个可能的速度方向
-#         e_jx = np.cos(np.pi / 4 * j) # 计算沿着纵向位置的速度分量
-#         e_jy = np.sin(np.pi / 4 * j) # 计算沿着横向位置的速度分量
-#         f_ij_eq[j] = rho_i * w_i * (1 + (e_jx * u_i + e_jy * w_i) / c_s ** 2 + ((e_jx * u_i + e_jy * w_i) ** 2 - (u_i ** 2 + w_i ** 2)) / (2 * c_s ** 4)) * alpha_i[j] # 计算局部平衡分布函数
-#     return f_ij_eq
-
-# # 定义晶格流体模型中的松弛时间参数
-# def tau_ij(x,y,v,a,vtype,i,t):
-#     omega_i = np.ones(9) # 初始化碰撞参数向量
-#     omega_i[0] = 0.5 # 设置静止方向的碰撞参数为0.5
-#     omega_i[2] = omega_i[4] = omega_i[6] = omega_i[8] = 0.75 # 设置对角线方向的碰撞参数为0.75
-#     if vtype[i] == 0: # 如果是社会车辆
-#         omega_i[3] = omega_i[7] = 1 # 设置横向方向的碰撞参数为1
-#         omega_i[1] = omega_i[5] = 0.75 # 设置纵向方向的碰撞参数为0.75
-#     else: # 如果是应急车辆
-#         omega_i[3] = omega_i[7] = 0.5 # 设置横向方向的碰撞参数为0.5
-#         omega_i[1] = omega_i[5] = 0.25 # 设置纵向方向的碰撞参数为0.25
-#     tau_ij = 1 / omega_i # 计算松弛时间参数
-#     return tau_ij
-
-# 定义晶格流体模型中的流体密度分布函数
-# def f_ij(x,y,v,a,vtype,i,t):
-#     Vf_ij_eq = f_ij_eq(x,y,v,a,vtype,i,t) # 计算局部平衡分布函数
-#     Vtau_ij = tau_ij(x,y,v,a,vtype,i,t) # 计算松弛时间参数
-#     f_ij = np.zeros(9) # 初始化流体密度分布函数向量
-#     for j in range(9): # 遍历九个可能的速度方向
-#         e_jx = np.cos(np.pi / 4 * j) # 计算沿着纵向位置的速度分量
-#         e_jy = np.sin(np.pi / 4 * j) # 计算沿着横向位置的速度分量
-#         x_j = x[i,t] - e_jx * v[i,t+1] # 计算沿着纵向位置的传播位置
-#         y_j = y[i,t] - e_jy * v[i,t+1] # 计算沿着横向位置的传播位置
-#         k_j = np.argmin(np.abs(x[:,t+1] - x_j)) # 找到最接近传播位置的车辆编号
-#         if np.abs(x[k_j,t+1] - x_j) < v_max: # 如果最接近传播位置的车辆距离小于最大速度（即有可能发生碰撞）
-#             f_ij[k_j,j,t+1] = f_ij[i,j,t+1] - (f_ij[i,j,t+1] - f_ij[k_j,j,t+1]) / Vtau_ij[k_j,j,t+1] # 更新流体密度分布函数，考虑碰撞过程
-#         else: # 如果最接近传播位置的车辆距离大于最大速度（即没有发生碰撞）
-#             f_ij[k_j,j,t+1] = f_ij[i,j,t+1] - (f_ij[i,j,t+1] - Vf_ij_eq[k_j,j,t+1]) / Vtau_ij[k_j,j,t+1] # 更新流体密度分布函数，考虑传播过程
-#     return f_ij
-
-
-
 # 生成模拟数据
 np.random.seed(0) # 设置随机数种子，保证每次运行结果一致
 N = 100 # 设置车辆数量
 T = 100 # 设置时间步长数量
-L = 1000 # 设置路段长度
+L = 5000 # 设置路段长度
 W = 12 # 设置路段宽度
 M = 3 # 设置车道数量
 v_max = 20 # 设置最大速度
@@ -245,7 +190,7 @@ for i in range(N):
             fijeq = f_ij_eq(x,y,v,a,vtype,i,t)
             tauij = tau_ij(x,y,v,a,vtype,i,t)
 
-            a[i,t+1] = a[i,t] + u[i,t] - (fij(i,[0:8],t) - fijeq(i,,t)) / tauij(i,,t) # 更新加速度，考虑晶格流体模型中的传播和碰撞过程
+            a[i,t+1] = a[i,t] + u[i,t] - (fij[i,1,t] - fijeq[i,1,t]) / tauij[i,1,t] # 更新加速度，考虑晶格流体模型中的传播和碰撞过程
             v[i,t+1] = v[i,t] + a[i,t+1] # 更新速度
             x[i,t+1] = x[i,t] + v[i,t+1] # 更新位置
 
@@ -283,26 +228,73 @@ safety = 1 - np.sum(np.diff(x, axis=0) < 0) / (N * (N - 1) / 2) # 计算安全�
 
 # 绘制交通系统数据和结果的图形
 plt.figure(figsize=(10,6))
+
+#所有车辆
+# plt.subplot(2,2,1)
+# plt.plot(x.T)
+# plt.xlabel("Time")
+# plt.ylabel("Position")
+# plt.title("Position of vehicles over time")
+# plt.subplot(2,2,2)
+# plt.plot(v.T)
+# plt.xlabel("Time")
+# plt.ylabel("Speed")
+# plt.title("Speed of vehicles over time")
+# plt.subplot(2,2,3)
+# plt.plot(a.T)
+# plt.xlabel("Time")
+# plt.ylabel("Acceleration")
+# plt.title("Acceleration of vehicles over time")
+# plt.subplot(2,2,4)
+# plt.plot(u.T)
+# plt.xlabel("Time")
+# plt.ylabel("Control input")
+# plt.title("Control input of vehicles over time")
+
+#应急车辆
+# plt.subplot(2,2,1)
+# plt.plot(x[vtype == 1,:].T)
+# plt.xlabel("Time")
+# plt.ylabel("EPosition")
+# plt.title("Position of Evehicles over time")
+# plt.subplot(2,2,2)
+# plt.plot(v[vtype == 1,:].T)
+# plt.xlabel("Time")
+# plt.ylabel("ESpeed")
+# plt.title("Speed of Evehicles over time")
+# plt.subplot(2,2,3)
+# plt.plot(a[vtype == 1,:].T)
+# plt.xlabel("Time")
+# plt.ylabel("Acceleration")
+# plt.title("EAcceleration of Evehicles over time")
+# plt.subplot(2,2,4)
+# plt.plot(u[vtype == 1,:].T)
+# plt.xlabel("Time")
+# plt.ylabel("Control input")
+# plt.title("EControl input of Evehicles over time")
+
+#社会车辆
 plt.subplot(2,2,1)
-plt.plot(x.T)
+plt.plot(x[vtype == 0,:].T)
 plt.xlabel("Time")
-plt.ylabel("Position")
-plt.title("Position of vehicles over time")
+plt.ylabel("EPosition")
+plt.title("Position of Evehicles over time")
 plt.subplot(2,2,2)
-plt.plot(v.T)
+plt.plot(v[vtype == 0,:].T)
 plt.xlabel("Time")
-plt.ylabel("Speed")
-plt.title("Speed of vehicles over time")
+plt.ylabel("ESpeed")
+plt.title("Speed of Evehicles over time")
 plt.subplot(2,2,3)
-plt.plot(a.T)
+plt.plot(a[vtype == 0,:].T)
 plt.xlabel("Time")
 plt.ylabel("Acceleration")
-plt.title("Acceleration of vehicles over time")
+plt.title("EAcceleration of Evehicles over time")
 plt.subplot(2,2,4)
-plt.plot(u.T)
+plt.plot(u[vtype == 0,:].T)
 plt.xlabel("Time")
 plt.ylabel("Control input")
-plt.title("Control input of vehicles over time")
+plt.title("EControl input of Evehicles over time")
+
 plt.tight_layout()
 plt.show()
 
